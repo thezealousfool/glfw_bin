@@ -1,0 +1,169 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  linux-x86_64:
+    name: linux-x86_64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth 1 https://github.com/glfw/glfw.git glfw
+          mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
+      - name: Install Dependencies
+        run: |
+          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip
+          unzip ninja-linux.zip
+          sudo cp ninja /usr/bin
+          rm ninja-linux.zip
+        working-directory: glfw
+      - name: Building - Debug
+        run: |
+          cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-debug
+      - name: Building - Release
+        run: |
+          cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../dist-release -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-release
+      - name: Create archives
+        run: |
+          sudo apt install p7zip-full
+          mkdir dist
+          7z a dist/linux-x86_64-debug.zip $(pwd)/dist-debug/*
+          7z a dist/linux-x86_64-release.zip $(pwd)/dist-release/*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: dist
+          name: dist-linux-x86_64
+
+  macos-aarch64:
+    name: macos-aarch64
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth 1 https://github.com/glfw/glfw.git glfw
+          mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
+      - name: Install Dependencies
+        run: |
+          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-mac.zip
+          unzip ninja-mac.zip
+          sudo cp ninja /usr/bin
+          rm ninja-mac.zip
+        working-directory: glfw
+      - name: Building - Debug
+        run: |
+          cmake .. -GNinja -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-debug
+      - name: Building - Release
+        run: |
+          cmake .. -GXcode -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_INSTALL_PREFIX=../../dist-release -DGLFW_INSTALL=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-release
+      - name: Create archives
+        run: |
+          brew install p7zip
+          mkdir dist
+          7z a dist/macos-aarch64-debug.zip $(pwd)/dist-debug/*
+          7z a dist/macos-aarch64-release.zip $(pwd)/dist-release/*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: dist
+          name: dist-macos-aarch64
+
+
+  macos-x86_64:
+    name: macos-x86_64
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth 1 https://github.com/glfw/glfw.git glfw
+          mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
+      - name: Install Dependencies
+        run: |
+          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-mac.zip
+          unzip ninja-mac.zip
+          sudo cp ninja /usr/bin
+          rm ninja-mac.zip
+        working-directory: glfw
+      - name: Building - Debug
+        run: |
+          cmake .. -GNinja -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-debug
+      - name: Building - Release
+        run: |
+          cmake .. -GXcode -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_INSTALL_PREFIX=../../dist-release -DGLFW_INSTALL=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-release
+      - name: Create archives
+        run: |
+          brew install p7zip
+          mkdir dist
+          7z a dist/macos-x86_64-debug.zip $(pwd)/dist-debug/*
+          7z a dist/macos-x86_64-release.zip $(pwd)/dist-release/*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: dist
+          name: dist-macos-x86_64
+
+
+  publish:
+    name: Publish Github release
+    needs:
+      - linux-x86_64
+      - macos-aarch64
+      - macos-x86_64
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Set Version
+        run: |
+          echo "RELEASE_VERSION=$(date '+%Y%m%d')" >> $GITHUB_ENV
+        shell: bash
+      - name: Download assets - linux-x86_64
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-linux-x86_64
+          path: dist
+      - name: Download assets - macos-aarch64
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-macos-aarch64
+          path: dist
+      - name: Download assets - macos-x86_64
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-macos-x86_64
+          path: dist
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: ${{ env.RELEASE_VERSION }}
+          files: |
+            dist/*.zip
+          draft: false
+          prerelease: false
