@@ -25,7 +25,7 @@ jobs:
           unzip ninja-linux.zip
           sudo cp ninja /usr/bin
           rm ninja-linux.zip
-          sudo apt install libwayland-dev libxkbcommon-dev
+          sudo apt install libwayland-dev libxkbrommon-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev mesa-common-dev libx11-xcb-dev pkg-config
         working-directory: glfw
       - name: Building - Debug
         run: |
