@@ -25,6 +25,7 @@ jobs:
           unzip ninja-linux.zip
           sudo cp ninja /usr/bin
           rm ninja-linux.zip
+          sudo apt install libwayland-dev
         working-directory: glfw
       - name: Building - Debug
         run: |
@@ -60,11 +61,7 @@ jobs:
           mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
       - name: Install Dependencies
         run: |
-          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-mac.zip
-          unzip ninja-mac.zip
-          sudo cp ninja /usr/bin
-          rm ninja-mac.zip
-        working-directory: glfw
+          brew install ninja
       - name: Building - Debug
         run: |
           cmake .. -GNinja -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
@@ -100,11 +97,7 @@ jobs:
           mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
       - name: Install Dependencies
         run: |
-          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-mac.zip
-          unzip ninja-mac.zip
-          sudo cp ninja /usr/bin
-          rm ninja-mac.zip
-        working-directory: glfw
+          brew install ninja
       - name: Building - Debug
         run: |
           cmake .. -GNinja -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0 -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
