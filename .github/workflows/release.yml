@@ -51,6 +51,40 @@ jobs:
           path: dist
           name: dist-linux-x86_64
 
+  linux-aarch64:
+    name: linux-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth 1 https://github.com/glfw/glfw.git glfw
+          mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
+      - name: Build
+        uses: uraimo/run-on-arch-action@v2
+        with:
+          arch: aarch64
+          distro: ubuntu_latest
+          githubToken: ${{ github.token }}
+          dockerRunArgs: |
+            --volume "${PWD}:/glfw"
+          install: |
+            apt-get update -q -y
+            apt-get install -q -y make gcc g++ libasan5 clang-tools curl p7zip-full libwayland-dev libxkbcommon-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev mesa-common-dev libx11-xcb-dev pkg-config
+          run: |
+            set -x
+            cd /glfw
+
+            # INSTALL CMAKE
+            CMAKE_VERSION=3.23.4
+            curl -L -O https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cmake-${CMAKE_VERSION}-Linux-aarch64.sh
+            chmod +x cmake-${CMAKE_VERSION}-Linux-aarch64.sh
+            ./cmake-${CMAKE_VERSION}-Linux-aarch64.sh --skip-license --prefix=/usr/local
+
+            # BUILD
+            cmake -DCMAKE_BUILD_TYPE=Release -B release-build -DCMAKE_INSTALL_PREFIX=../dist-release -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+            cmake --build release-build --parallel --config Release
+            cmake --install release-build
+
   macos-aarch64:
     name: macos-aarch64
     runs-on: macos-latest
