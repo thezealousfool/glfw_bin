@@ -20,22 +20,20 @@ jobs:
           mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
       - name: Install Dependencies
         run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
-          wget https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip
+          sudo apt install -q -y libwayland-dev libxkbcommon-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev mesa-common-dev libx11-xcb-dev pkg-config unzip tar xz-utils curl cmake
+          echo $(pwd) >> $GITHUB_PATH
+          curl -fLO https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip
           unzip ninja-linux.zip
-          sudo cp ninja /usr/bin
           rm ninja-linux.zip
-          sudo apt install libwayland-dev libxkbcommon-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev mesa-common-dev libx11-xcb-dev pkg-config
-        working-directory: glfw
       - name: Building - Debug
         run: |
-          cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
           cmake --build .
           cmake --install .
         working-directory: glfw/build-debug
       - name: Building - Release
         run: |
-          cmake .. -GNinja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../dist-release -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../dist-release -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=ON -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
           cmake --build .
           cmake --install .
         working-directory: glfw/build-release
@@ -50,6 +48,45 @@ jobs:
         with:
           path: dist
           name: dist-linux-x86_64
+
+  linux-aarch64:
+    name: linux-aarch64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: |
+          git clone --depth 1 https://github.com/glfw/glfw.git glfw
+          mkdir -p glfw/build-debug glfw/build-release dist-debug dist-release
+      - name: Install Dependencies
+        run: |
+          sudo apt install -q -y libwayland-dev libxkbcommon-dev libxrandr-dev libxi-dev libxinerama-dev libxcursor-dev mesa-common-dev libx11-xcb-dev pkg-config unzip tar xz-utils curl cmake gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+          echo $(pwd) >> $GITHUB_PATH
+          curl -fLO https://github.com/ninja-build/ninja/releases/latest/download/ninja-linux.zip
+          unzip ninja-linux.zip
+          rm ninja-linux.zip
+      - name: Building - Debug
+        run: |
+          cmake .. -GNinja -DCMAKE_C_COMPILER="aarch64-linux-gnu-gcc" -DCMAKE_BUILD_TYPE=Debug -DCMAKE_INSTALL_PREFIX=../../dist-debug -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=OFF -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-debug
+      - name: Building - Release
+        run: |
+          cmake .. -GNinja -DCMAKE_C_COMPILER="aarch64-linux-gnu-gcc" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=../../dist-release -DGLFW_INSTALL=ON -DGLFW_BUILD_WAYLAND=ON -DGLFW_BUILD_X11=OFF -DGLFW_LIBRARY_TYPE=STATIC -DGLFW_BUILD_DOCS=OFF -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF
+          cmake --build .
+          cmake --install .
+        working-directory: glfw/build-release
+      - name: Create archives
+        run: |
+          sudo apt install p7zip-full
+          mkdir dist
+          7z a dist/linux-aarch64-debug.zip $(pwd)/dist-debug/*
+          7z a dist/linux-aarch64-release.zip $(pwd)/dist-release/*
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          path: dist
+          name: dist-linux-aarch64
 
   macos-aarch64:
     name: macos-aarch64
@@ -127,6 +164,7 @@ jobs:
     name: Publish Github release
     needs:
       - linux-x86_64
+      - linux-aarch64
       - macos-aarch64
       - macos-x86_64
     runs-on: ubuntu-latest
@@ -140,6 +178,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dist-linux-x86_64
+          path: dist
+      - name: Download assets - linux-aarch64
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-linux-aarch64
           path: dist
       - name: Download assets - macos-aarch64
         uses: actions/download-artifact@v4
