@@ -113,7 +113,6 @@ jobs:
         working-directory: glfw/build-release
       - name: Create archives
         run: |
-          brew install p7zip
           mkdir dist
           7z a dist/macos-aarch64-debug.zip $(pwd)/dist-debug/*
           7z a dist/macos-aarch64-release.zip $(pwd)/dist-release/*
@@ -149,7 +148,6 @@ jobs:
         working-directory: glfw/build-release
       - name: Create archives
         run: |
-          brew install p7zip
           mkdir dist
           7z a dist/macos-x86_64-debug.zip $(pwd)/dist-debug/*
           7z a dist/macos-x86_64-release.zip $(pwd)/dist-release/*
